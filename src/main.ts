@@ -1,17 +1,31 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+import {getLatestDeploymentCommit} from './getLatestDeploymentCommit'
+import {getCompareCommitsSize} from './getCompareCommitsSize'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+    const [owner, repo] = (
+      process.env.GITHUB_REPOSITORY ?? 'shwld/revelup-note'
+    ).split('/')
+    core.setOutput('owner/repo', {owner, repo})
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const latestDeploymentCommit = await getLatestDeploymentCommit(owner, repo)
+    core.setOutput('latestDeploymentCommit', latestDeploymentCommit)
 
+    if (latestDeploymentCommit === undefined) {
+      return
+    }
+
+    const len = await getCompareCommitsSize(
+      owner,
+      repo,
+      `${latestDeploymentCommit}...main`
+    )
+
+    core.setOutput('len', len)
     core.setOutput('time', new Date().toTimeString())
   } catch (error) {
+    core.setOutput('sugoierror', error)
     if (error instanceof Error) core.setFailed(error.message)
   }
 }
