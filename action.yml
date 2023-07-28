@@ -1,0 +1,19 @@
+name: 'check for deployment omissions'
+description: 'Check for Deployment Omissions'
+author: 'mofmof'
+inputs:
+  github_token:
+    required: true
+    description: 'GitHub Token'
+  base_branch:
+    required: false
+    description: 'Base branch name'
+  slack_token:
+    required: true
+    description: 'Slack Token'
+  slack_channel:
+    required: true
+    description: 'Slack Channel'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
