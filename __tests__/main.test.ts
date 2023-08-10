@@ -9,7 +9,12 @@ test('test runs', () => {
   const np = process.execPath
   const ip = path.join(__dirname, '..', 'lib', 'main.js')
   const options: cp.ExecFileSyncOptions = {
-    env: process.env
+    env: {
+      ...process.env
+      // INPUT_GITHUB_TOKEN: ,
+      // INPUT_SLACK_TOKEN: ,
+      // INPUT_SLACK_CHANNEL: ,
+    }
   }
   console.log(cp.execFileSync(np, [ip], options).toString())
 })

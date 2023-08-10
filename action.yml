@@ -1,11 +1,16 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'check deployment ommissions'
+description: 'Check for Deployment Omissions'
+author: 'mofmof'
 inputs:
-  milliseconds: # change this
+  github_token:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'GitHub Token'
+  slack_token:
+    required: true
+    description: 'Slack Token'
+  slack_channel:
+    required: true
+    description: 'Slack Channel'
 runs:
   using: 'node16'
   main: 'dist/index.js'
