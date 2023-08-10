@@ -5,6 +5,9 @@ inputs:
   github_token:
     required: true
     description: 'GitHub Token'
+  base_branch:
+    required: false
+    description: 'Base branch name'
   slack_token:
     required: true
     description: 'Slack Token'

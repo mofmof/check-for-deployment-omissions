@@ -14,6 +14,7 @@ test('test runs', () => {
       // INPUT_GITHUB_TOKEN: ,
       // INPUT_SLACK_TOKEN: ,
       // INPUT_SLACK_CHANNEL: ,
+      // INPUT_BASE_BRANCH_NAME: ,
     }
   }
   console.log(cp.execFileSync(np, [ip], options).toString())

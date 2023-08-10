@@ -8,16 +8,16 @@ async function run(): Promise<void> {
     const githubToken: string = core.getInput('github_token')
     const slackToken: string = core.getInput('slack_token')
     const slackChannel: string = core.getInput('slack_channel')
+    const baseBranch: string = core.getInput('base_branch')
 
     process.env.GITHUB_TOKEN = githubToken
-    const [owner, repo] = (
-      process.env.GITHUB_REPOSITORY ?? 'shwld/revelup-note'
-    ).split('/')
+    const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
     core.setOutput('owner/repo', {owner, repo})
 
     const latestDeploymentCommit = await getLatestDeploymentCommit(owner, repo)
     core.setOutput('latestDeploymentCommit', latestDeploymentCommit)
 
+    // 1回もデプロイされていない場合は何もしない
     if (latestDeploymentCommit === undefined) {
       return
     }
@@ -25,7 +25,7 @@ async function run(): Promise<void> {
     const len = await getCompareCommitsSize(
       owner,
       repo,
-      `${latestDeploymentCommit}...main`
+      `${latestDeploymentCommit}...${baseBranch}`
     )
 
     core.setOutput('len', len)
@@ -34,7 +34,7 @@ async function run(): Promise<void> {
     const web = new WebClient(slackToken)
     const slackResponse = await web.chat.postMessage({
       text: `${owner}/${repo} に未デプロイの変更${
-        len > 0 ? `が${len}件あります` : 'はありません'
+        len > 0 ? `があります (${len}commits)` : 'はありません'
       }`,
       channel: `#${slackChannel}`
     })
