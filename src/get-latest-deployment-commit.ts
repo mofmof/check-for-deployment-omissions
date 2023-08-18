@@ -1,4 +1,5 @@
 import {graphql} from '@octokit/graphql'
+import fetch from 'node-fetch'
 
 type QueryResult = {
   repository: {
@@ -40,7 +41,8 @@ export const getLatestDeploymentCommit = async (
     repo,
     headers: {
       authorization: `token ${process.env.GITHUB_TOKEN}`
-    }
+    },
+    fetch
   })
   const latestDeploymentCommit = result.repository.deployments.nodes.find(
     node => node.state === 'ACTIVE'

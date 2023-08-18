@@ -1,4 +1,5 @@
 import {Octokit} from '@octokit/rest'
+import fetch from 'node-fetch'
 
 export const getCompareCommitsSize = async (
   owner: string,
@@ -6,7 +7,8 @@ export const getCompareCommitsSize = async (
   basehead: string
 ): Promise<number> => {
   const octokit = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN}`
+    auth: `token ${process.env.GITHUB_TOKEN}`,
+    fetch
   })
   const {data} = await octokit.repos.compareCommitsWithBasehead({
     owner,
