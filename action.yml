@@ -15,7 +15,7 @@ inputs:
     required: true
     description: 'Slack Channel'
 runs:
-  using: 'node20'
+  using: 'node18'
   main: 'dist/index.js'
 branding:
   icon: 'bell'
