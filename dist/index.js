@@ -18,7 +18,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkDeployment = void 0;
 const get_latest_deployment_commit_1 = __nccwpck_require__(6329);
-const get_compare_commits_size_1 = __nccwpck_require__(1266);
+const compare_commits_size_1 = __nccwpck_require__(8110);
 const web_api_1 = __nccwpck_require__(431);
 function checkDeployment({ log, slackChannel, slackToken, githubToken, githubRepository, baseBranch, deploymentEnvironmentName }) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -34,15 +34,30 @@ function checkDeployment({ log, slackChannel, slackToken, githubToken, githubRep
         if (latestDeploymentCommit === undefined) {
             return;
         }
-        const len = yield (0, get_compare_commits_size_1.getCompareCommitsSize)(githubToken, owner, repo, `${latestDeploymentCommit}...${baseBranch}`);
-        log('len', len);
-        log('time', new Date().toTimeString());
+        const { changes } = yield (0, compare_commits_size_1.compareCommits)(githubToken, owner, repo, `${latestDeploymentCommit}...${baseBranch}`);
+        log('changes', changes);
         const web = new web_api_1.WebClient(slackToken);
-        const text = `${owner}/${repo} に未デプロイの変更${len > 0 ? `があります (${len}commits)` : 'はありません'}\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`;
-        log('slack text', text);
         const slackResponse = yield web.chat.postMessage({
-            text,
-            channel: `#${slackChannel}`
+            channel: `#${slackChannel}`,
+            attachments: changes.files > 0
+                ? [
+                    {
+                        fallback: `There are undeployed changes in the ${owner}/${repo}`,
+                        color: '#FF0000',
+                        title: 'Deployment Notification',
+                        text: `There are undeployed changes in the ${owner}/${repo} (${changes.commits}commits)\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`,
+                        mrkdwn_in: ['text']
+                    }
+                ]
+                : [
+                    {
+                        fallback: `No undeployed changes in ${owner}/${repo}`,
+                        color: '#00FF00',
+                        title: 'Deployment Notification',
+                        text: `No undeployed changes in ${owner}/${repo}\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`,
+                        mrkdwn_in: ['text']
+                    }
+                ]
         });
         log('slack response', slackResponse);
     });
@@ -52,7 +67,7 @@ exports.checkDeployment = checkDeployment;
 
 /***/ }),
 
-/***/ 1266:
+/***/ 8110:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -70,11 +85,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCompareCommitsSize = void 0;
+exports.compareCommits = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const node_fetch_1 = __importDefault(__nccwpck_require__(467));
-const getCompareCommitsSize = (githubToken, owner, repo, basehead) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+const compareCommits = (githubToken, owner, repo, basehead) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
     const octokit = new rest_1.Octokit({
         auth: `token ${githubToken}`,
         request: {
@@ -86,9 +101,14 @@ const getCompareCommitsSize = (githubToken, owner, repo, basehead) => __awaiter(
         repo,
         basehead
     });
-    return (_a = data === null || data === void 0 ? void 0 : data.commits.length) !== null && _a !== void 0 ? _a : 0;
+    return {
+        changes: {
+            commits: (_a = data === null || data === void 0 ? void 0 : data.commits.length) !== null && _a !== void 0 ? _a : 0,
+            files: (_c = (_b = data === null || data === void 0 ? void 0 : data.files) === null || _b === void 0 ? void 0 : _b.length) !== null && _c !== void 0 ? _c : 0
+        }
+    };
 });
-exports.getCompareCommitsSize = getCompareCommitsSize;
+exports.compareCommits = compareCommits;
 
 
 /***/ }),
