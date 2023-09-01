@@ -1,5 +1,5 @@
 import {getLatestDeploymentCommit} from './get-latest-deployment-commit'
-import {getCompareCommitsSize} from './get-compare-commits-size'
+import {compareCommits} from './compare-commits-size'
 import {WebClient} from '@slack/web-api'
 
 type Params = {
@@ -42,24 +42,38 @@ export async function checkDeployment({
     return
   }
 
-  const len = await getCompareCommitsSize(
+  const {changes} = await compareCommits(
     githubToken,
     owner,
     repo,
     `${latestDeploymentCommit}...${baseBranch}`
   )
 
-  log('len', len)
-  log('time', new Date().toTimeString())
+  log('changes', changes)
 
   const web = new WebClient(slackToken)
-  const text = `${owner}/${repo} に未デプロイの変更${
-    len > 0 ? `があります (${len}commits)` : 'はありません'
-  }\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`
-  log('slack text', text)
   const slackResponse = await web.chat.postMessage({
-    text,
-    channel: `#${slackChannel}`
+    channel: `#${slackChannel}`,
+    attachments:
+      changes.files > 0
+        ? [
+            {
+              fallback: `There are undeployed changes in the ${owner}/${repo}`,
+              color: '#FF0000',
+              title: 'Deployment Notification',
+              text: `There are undeployed changes in the ${owner}/${repo} (${changes.commits}commits)\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`,
+              mrkdwn_in: ['text']
+            }
+          ]
+        : [
+            {
+              fallback: `No undeployed changes in ${owner}/${repo}`,
+              color: '#00FF00',
+              title: 'Deployment Notification',
+              text: `No undeployed changes in ${owner}/${repo}\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`,
+              mrkdwn_in: ['text']
+            }
+          ]
   })
   log('slack response', slackResponse)
 }

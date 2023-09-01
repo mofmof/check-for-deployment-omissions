@@ -1,12 +1,19 @@
 import {Octokit} from '@octokit/rest'
 import fetch from 'node-fetch'
 
-export const getCompareCommitsSize = async (
+type Result = {
+  changes: {
+    commits: number
+    files: number
+  }
+}
+
+export const compareCommits = async (
   githubToken: string,
   owner: string,
   repo: string,
   basehead: string
-): Promise<number> => {
+): Promise<Result> => {
   const octokit = new Octokit({
     auth: `token ${githubToken}`,
     request: {
@@ -18,5 +25,10 @@ export const getCompareCommitsSize = async (
     repo,
     basehead
   })
-  return data?.commits.length ?? 0
+  return {
+    changes: {
+      commits: data?.commits.length ?? 0,
+      files: data?.files?.length ?? 0
+    }
+  }
 }
