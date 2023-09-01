@@ -7,6 +7,9 @@ async function run(): Promise<void> {
     const slackToken: string = core.getInput('slack_token')
     const slackChannel: string = core.getInput('slack_channel')
     const baseBranch: string = core.getInput('base_branch')
+    const deploymentEnvironmentName: string = core.getInput(
+      'deployment_environment_name'
+    )
     core.setOutput('start', {
       slackChannel,
       baseBranch
@@ -19,6 +22,7 @@ async function run(): Promise<void> {
       githubToken,
       githubRepository: process.env.GITHUB_REPOSITORY ?? '/',
       baseBranch,
+      deploymentEnvironmentName
     })
   } catch (error) {
     core.setOutput('error', error)

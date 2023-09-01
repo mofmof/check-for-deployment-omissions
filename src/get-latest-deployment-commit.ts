@@ -17,15 +17,16 @@ type QueryResult = {
 export const getLatestDeploymentCommit = async (
   githubToken: string,
   owner: string,
-  repo: string
+  repo: string,
+  environmentName: string
 ): Promise<string | undefined> => {
   const result: QueryResult = await graphql({
     query: `
-      query getRepo($owner: String!, $repo: String!){
+      query getRepo($owner: String!, $repo: String!, $environmentNames: [String!]!){
         repository(owner: $owner, name: $repo) {
           deployments(
             first: 3
-            environments: ["production"]
+            environments: $environmentNames
             orderBy: {field: CREATED_AT, direction: DESC}
           ) {
             nodes {
@@ -40,6 +41,7 @@ export const getLatestDeploymentCommit = async (
     `,
     owner,
     repo,
+    environmentNames: [environmentName],
     headers: {
       authorization: `token ${githubToken}`
     },
