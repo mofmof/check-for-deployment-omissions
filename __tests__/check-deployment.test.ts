@@ -1,6 +1,6 @@
 import {test} from '@jest/globals'
 import * as dotenv from 'dotenv'
-import {checkDeployment} from './check-deployment'
+import {checkDeployment} from '../src/check-deployment'
 
 // shows how the runner will run a javascript action with env / stdout protocol
 test('test run', async () => {

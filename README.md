@@ -47,7 +47,8 @@ jobs:
       - uses: mofmof/check-for-deployment-omissions@v0
         with:
           base_branch: 'main'
+          deployment_environment_name: 'production'
           github_token: ${{ secrets.GITHUB_TOKEN }}
           slack_token: ${{ secrets.SLACK_TOKEN }}
-          slack_channel: ${{ secrets.SLACK_CHANNEL }}
+          slack_channel: ${{ vars.SLACK_CHANNEL }}
 ```

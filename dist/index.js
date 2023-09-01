@@ -1,6 +1,57 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 4521:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.checkDeployment = void 0;
+const get_latest_deployment_commit_1 = __nccwpck_require__(6329);
+const get_compare_commits_size_1 = __nccwpck_require__(1266);
+const web_api_1 = __nccwpck_require__(431);
+function checkDeployment({ log, slackChannel, slackToken, githubToken, githubRepository, baseBranch, deploymentEnvironmentName }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        log('start', {
+            slackChannel,
+            baseBranch
+        });
+        const [owner, repo] = (githubRepository || '/').split('/');
+        log('owner/repo', { owner, repo });
+        const latestDeploymentCommit = yield (0, get_latest_deployment_commit_1.getLatestDeploymentCommit)(githubToken, owner, repo, deploymentEnvironmentName);
+        log('latestDeploymentCommit', latestDeploymentCommit);
+        // 1回もデプロイされていない場合は何もしない
+        if (latestDeploymentCommit === undefined) {
+            return;
+        }
+        const len = yield (0, get_compare_commits_size_1.getCompareCommitsSize)(githubToken, owner, repo, `${latestDeploymentCommit}...${baseBranch}`);
+        log('len', len);
+        log('time', new Date().toTimeString());
+        const web = new web_api_1.WebClient(slackToken);
+        const text = `${owner}/${repo} に未デプロイの変更${len > 0 ? `があります (${len}commits)` : 'はありません'}\nhttps://github.com/${owner}/${repo}/compare/${latestDeploymentCommit}...${baseBranch}`;
+        log('slack text', text);
+        const slackResponse = yield web.chat.postMessage({
+            text,
+            channel: `#${slackChannel}`
+        });
+        log('slack response', slackResponse);
+    });
+}
+exports.checkDeployment = checkDeployment;
+
+
+/***/ }),
+
 /***/ 1266:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -22,10 +73,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getCompareCommitsSize = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const node_fetch_1 = __importDefault(__nccwpck_require__(467));
-const getCompareCommitsSize = (owner, repo, basehead) => __awaiter(void 0, void 0, void 0, function* () {
+const getCompareCommitsSize = (githubToken, owner, repo, basehead) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const octokit = new rest_1.Octokit({
-        auth: `token ${process.env.GITHUB_TOKEN}`,
+        auth: `token ${githubToken}`,
         request: {
             fetch: node_fetch_1.default
         }
@@ -63,15 +114,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getLatestDeploymentCommit = void 0;
 const graphql_1 = __nccwpck_require__(8467);
 const node_fetch_1 = __importDefault(__nccwpck_require__(467));
-const getLatestDeploymentCommit = (owner, repo) => __awaiter(void 0, void 0, void 0, function* () {
+const getLatestDeploymentCommit = (githubToken, owner, repo, environmentName) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const result = yield (0, graphql_1.graphql)({
         query: `
-      query getRepo($owner: String!, $repo: String!){
+      query getRepo($owner: String!, $repo: String!, $environmentNames: [String!]!){
         repository(owner: $owner, name: $repo) {
           deployments(
             first: 3
-            environments: ["production"]
+            environments: $environmentNames
             orderBy: {field: CREATED_AT, direction: DESC}
           ) {
             nodes {
@@ -86,8 +137,9 @@ const getLatestDeploymentCommit = (owner, repo) => __awaiter(void 0, void 0, voi
     `,
         owner,
         repo,
+        environmentNames: [environmentName],
         headers: {
-            authorization: `token ${process.env.GITHUB_TOKEN}`
+            authorization: `token ${githubToken}`
         },
         request: {
             fetch: node_fetch_1.default
@@ -140,9 +192,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const get_latest_deployment_commit_1 = __nccwpck_require__(6329);
-const get_compare_commits_size_1 = __nccwpck_require__(1266);
-const web_api_1 = __nccwpck_require__(431);
+const check_deployment_1 = __nccwpck_require__(4521);
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -151,30 +201,20 @@ function run() {
             const slackToken = core.getInput('slack_token');
             const slackChannel = core.getInput('slack_channel');
             const baseBranch = core.getInput('base_branch');
+            const deploymentEnvironmentName = core.getInput('deployment_environment_name');
             core.setOutput('start', {
                 slackChannel,
                 baseBranch
             });
-            process.env.GITHUB_TOKEN = githubToken;
-            const [owner, repo] = ((_a = process.env.GITHUB_REPOSITORY) !== null && _a !== void 0 ? _a : '/').split('/');
-            core.setOutput('owner/repo', { owner, repo });
-            const latestDeploymentCommit = yield (0, get_latest_deployment_commit_1.getLatestDeploymentCommit)(owner, repo);
-            core.setOutput('latestDeploymentCommit', latestDeploymentCommit);
-            // 1回もデプロイされていない場合は何もしない
-            if (latestDeploymentCommit === undefined) {
-                return;
-            }
-            const len = yield (0, get_compare_commits_size_1.getCompareCommitsSize)(owner, repo, `${latestDeploymentCommit}...${baseBranch}`);
-            core.setOutput('len', len);
-            core.setOutput('time', new Date().toTimeString());
-            const web = new web_api_1.WebClient(slackToken);
-            const text = `${owner}/${repo} に未デプロイの変更${len > 0 ? `があります (${len}commits)` : 'はありません'}`;
-            core.setOutput('slack text', text);
-            const slackResponse = yield web.chat.postMessage({
-                text,
-                channel: `#${slackChannel}`
+            yield (0, check_deployment_1.checkDeployment)({
+                log: core.setOutput,
+                slackChannel,
+                slackToken,
+                githubToken,
+                githubRepository: (_a = process.env.GITHUB_REPOSITORY) !== null && _a !== void 0 ? _a : '/',
+                baseBranch,
+                deploymentEnvironmentName
             });
-            core.setOutput('slack resp', slackResponse);
         }
         catch (error) {
             core.setOutput('error', error);
