@@ -1,7 +1,5 @@
 import * as core from '@actions/core'
-import {getLatestDeploymentCommit} from './get-latest-deployment-commit'
-import {getCompareCommitsSize} from './get-compare-commits-size'
-import {WebClient} from '@slack/web-api'
+import {checkDeployment} from './check-deployment'
 
 async function run(): Promise<void> {
   try {
@@ -14,37 +12,14 @@ async function run(): Promise<void> {
       baseBranch
     })
 
-    process.env.GITHUB_TOKEN = githubToken
-    const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '/').split('/')
-    core.setOutput('owner/repo', {owner, repo})
-
-    const latestDeploymentCommit = await getLatestDeploymentCommit(owner, repo)
-    core.setOutput('latestDeploymentCommit', latestDeploymentCommit)
-
-    // 1回もデプロイされていない場合は何もしない
-    if (latestDeploymentCommit === undefined) {
-      return
-    }
-
-    const len = await getCompareCommitsSize(
-      owner,
-      repo,
-      `${latestDeploymentCommit}...${baseBranch}`
-    )
-
-    core.setOutput('len', len)
-    core.setOutput('time', new Date().toTimeString())
-
-    const web = new WebClient(slackToken)
-    const text = `${owner}/${repo} に未デプロイの変更${
-      len > 0 ? `があります (${len}commits)` : 'はありません'
-    }`
-    core.setOutput('slack text', text)
-    const slackResponse = await web.chat.postMessage({
-      text,
-      channel: `#${slackChannel}`
+    await checkDeployment({
+      log: core.setOutput,
+      slackChannel,
+      slackToken,
+      githubToken,
+      githubRepository: process.env.GITHUB_REPOSITORY ?? '/',
+      baseBranch,
     })
-    core.setOutput('slack resp', slackResponse)
   } catch (error) {
     core.setOutput('error', error)
     if (error instanceof Error) core.setFailed(error.message)

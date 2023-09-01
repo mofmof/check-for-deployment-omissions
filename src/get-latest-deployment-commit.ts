@@ -15,6 +15,7 @@ type QueryResult = {
 }
 
 export const getLatestDeploymentCommit = async (
+  githubToken: string,
   owner: string,
   repo: string
 ): Promise<string | undefined> => {
@@ -40,7 +41,7 @@ export const getLatestDeploymentCommit = async (
     owner,
     repo,
     headers: {
-      authorization: `token ${process.env.GITHUB_TOKEN}`
+      authorization: `token ${githubToken}`
     },
     request: {
       fetch
