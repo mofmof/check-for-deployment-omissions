@@ -29,6 +29,8 @@ oauth_config:
       - chat:write.public
 ```
 
+Get `Bot User OAuth Token` in the `OAuth & Permissions` section
+
 ## 2. Create GitHub Actions workflow
 
 .github/workflows/check-for-deployment-omissions.yml
